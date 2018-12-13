@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import iso8601
+import datetime
 
 import discord
 
@@ -116,8 +118,9 @@ async def juicy(client, msg, words, help=False):
 
 
 async def notify(client, msg, words, help=False):
-    """Allows discord users to announce their absence."""
-
+    """Allows discord users to announce their absence.
+	Excel format is as follows: Timestamp | User | State (absent/late/TKed).
+	"""
     author_fmt = '{}#{}'.format(msg.author.name, msg.author.discriminator)
 
     user_row = sheet_notifications.find_in_column(column=2, value=author_fmt)
@@ -127,21 +130,39 @@ async def notify(client, msg, words, help=False):
         reply = 'Please provide an argument. Usage: `?notify absent|late|list|clear`'
 
     elif words[0] == 'absent':
-        # If the user already has an entry in the worksheet
-        if user_row > 0:
-            cell = sheet_notifications.cell(row=user_row, column=3)
-            if cell.value == 'Notified absent':
-                # Tell them that you already marked them
-                reply = 'You are already notified absent.'
-            else:
-                # Overwrite whatever they had
-                cell.value = 'Notified absent'
-                reply = 'Copy that, I changed you to notified absent.'
-        else:
-            # Add a new entry for the user
-            sheet_notifications.append_row(
-                [msg.timestamp, author_fmt, 'Notified absent'])
-            reply = 'Copy that, I marked you as notified absent.'
+		# Check for a second word. If none present proceed with marking user absent.
+		if words[1] == '':
+			# If the user already has an entry in the worksheet
+			if user_row > 0:
+				cell = sheet_notifications.cell(row=user_row, column=3)
+				if cell.value == 'Notified absent':
+					# Tell them that you already marked them
+					reply = 'You are already notified absent.'
+				else:
+					# Overwrite whatever they had
+					cell.value = 'Notified absent'
+					reply = 'Copy that, I changed you to notified absent.'
+			else:
+				# Add a new entry for the user
+				sheet_notifications.append_row(
+					[msg.timestamp, author_fmt, 'Notified absent'])
+				reply = 'Copy that, I marked you as notified absent.'
+		
+		# Check if the second word is in fact a number (no. of days absent)
+		elif isnumeric(words[1]):
+			days = words[1]
+			
+			# Cycle through x days and mark the user absent
+			for x in days
+				# Convert ISO8601-date into Python datetime 
+				date = iso8601.parse_date(msg.timestamp) 
+				
+				# Add a new entry for the user on the specific date
+				sheet_notifications.append_row(
+					[date, author_fmt, 'Notified absent'])
+					
+				# Add one day
+				date += datetime.timedelta(days=1)
 
     # Mark as late
     elif words[0] == 'late':
